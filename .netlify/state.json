@@ -1,0 +1,19 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Lincoln",
+			"country": {
+				"code": "US",
+				"name": "United States"
+			},
+			"subdivision": {
+				"code": "NE",
+				"name": "Nebraska"
+			},
+			"timezone": "America/Chicago",
+			"latitude": 40.7842,
+			"longitude": -96.6461
+		},
+		"timestamp": 1711234466552
+	}
+}
