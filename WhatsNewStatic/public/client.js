@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/fetch-data');
         const data = await response.json();
-        console.log(data);
+        //console.log(data);
         processData(data); // Call a function to process and render the data in the DOM
     } catch (error) {
         console.error('Error fetching data:', error);
