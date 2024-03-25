@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "description": "WhatsNewStatic",
   "main": "server.js",
-  "author": {
-    "name": ""
+  "author": "",
+  "scripts": {
+    "start": "node server.js"
   },
   "devDependencies": {
     "eslint": "^8.21.0"
   },
-  "eslintConfig": {},
   "dependencies": {
     "@notionhq/client": "^2.2.14"
   }
