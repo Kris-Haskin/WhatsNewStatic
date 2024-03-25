@@ -1,13 +1,15 @@
 
-(async () => {
+
+document.addEventListener('DOMContentLoaded', async () => {
     try {
-        const response = await fetch('/.netlify/functions/fetchNotion'); // Fetch data from the serverless function endpoint
+        const response = await fetch('/.netlify/functions/fetchNotion');
         const data = await response.json();
+        //console.log(data);
         processData(data); // Call a function to process and render the data in the DOM
     } catch (error) {
         console.error('Error fetching data:', error);
     }
-})();
+});
 
 function processData(data) {
     const slideContainer = document.getElementById('slide-container');
