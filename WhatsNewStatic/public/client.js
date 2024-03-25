@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        const response = await fetch('/fetch-data');
+        const response = await fetch('/.netlify/functions/fetchNotion');
         const data = await response.json();
         //console.log(data);
         processData(data); // Call a function to process and render the data in the DOM

@@ -13,7 +13,7 @@ const notion = new Client({ auth: apiKey });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/fetch-data', async (req, res) => {
+app.get('/.netlify/functions/fetchNotion', async (req, res) => {
     try {
         const response = await fetchWhatsNewList();
         res.json(response);
