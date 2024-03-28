@@ -12,7 +12,6 @@ const apiKey = "secret_MHwIkM5f3RNIiLUbkCkVjAUztCZPeE6tx6jF8EostMS";
 const notion = new Client({ auth: apiKey });
 
 app.use(express.static(path.join(__dirname, 'public')));
-
 app.get('/.netlify/functions/fetchNotion', async (req, res) => {
     try {
         const response = await fetchWhatsNewList();
@@ -22,6 +21,7 @@ app.get('/.netlify/functions/fetchNotion', async (req, res) => {
         res.status(500).send('Internal server error');
     }
 });
+
 
 async function fetchWhatsNewList() {
     try {
