@@ -178,8 +178,22 @@ function generateHTML(data) {
         </head>
         <body>
         <h1>H1 tetset</h1>
-            <div id="slide-container">${slidesHTML.join('')}</div>
-        </body>
+           <div id="slide-container">${slidesHTML.join('')}</div>
+            <script>
+                // JavaScript code for controlling the slideshow
+                const slides = document.querySelectorAll('.slide');
+                let currentIndex = 0;
+
+                const displayNextSlide = () => {
+                    slides[currentIndex].style.display = 'none'; // Hide current slide
+                    currentIndex = (currentIndex + 1) % slides.length; // Move to next slide
+                    slides[currentIndex].style.display = 'block'; // Show next slide
+                };
+
+                displayNextSlide(); // Display the first slide
+
+                setInterval(displayNextSlide, 3000); // Switch to the next slide every 3 seconds
+            </script>        </body>
         </html>
     `;
 }
