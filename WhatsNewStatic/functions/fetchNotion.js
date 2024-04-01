@@ -205,7 +205,7 @@ function generateHTML(data) {
             </style>
         </head>
         <body>
-        <h1>Dog Breeds</h1>
+        <h1>Dogs</h1>
            <div id="slide-container">${slidesHTML.join('')}</div>
             <script>
                 // JavaScript code for controlling the slideshow
