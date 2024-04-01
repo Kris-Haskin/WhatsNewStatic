@@ -169,11 +169,39 @@ function generateHTML(data) {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Notion Page Display</title>
             <style>
-                /* Add your CSS styles for the slideshow here */
-                .slide {
-                    /* Your slide styles */
-                }
-                /* Add more styles as needed */
+    /* Add your CSS styles for the slideshow here */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333; /* Dark gray background */
+            color: #ffffff; /* White text color */
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
+        }
+
+        .slide {
+            margin: 0 auto; /* Center the slides horizontally */
+            padding: 15px;
+            max-width: 600px; /* Set maximum width for slides */
+            background-color: #222; /* Darker gray background for each slide */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add shadow effect */
+        }
+
+        h2 {
+            font-size: 1.5em; /* 150% of the default font size */
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 1.2em; /* 120% of the default font size */
+            margin-bottom: 15px;
+        }
+
+        .slide img {
+            display: block; /* Ensure images are displayed as block elements */
+            max-width: 100%; /* Ensure images don't exceed slide width */
+            border-radius: 5px; /* Add rounded corners to images */
+        }
             </style>
         </head>
         <body>
