@@ -149,18 +149,17 @@ function processWhatsNewList(whatsNewList) {
 
     return processedList;
 }
-function generateHTML(data) {
-    // Extract the first item from the data
-    const firstItem = data[0];
 
-    // Generate HTML for the first slide
-    const firstSlideHTML = `
-        <div class="slide">
-            <h2>${firstItem.name}</h2>
-            <p>${firstItem.text}</p>
-            ${firstItem.photo ? `<img src="${firstItem.photo}" alt="${firstItem.name}">` : ''}
-        </div>
-    `;
+function generateHTML(data) {
+    const slidesHTML = data.map(item => {
+        return `
+            <div class="slide">
+                <h2>${item.name}</h2>
+                <p>${item.text}</p>
+                ${item.photo ? `<img src="${item.photo}" alt="${item.name}">` : ''}
+            </div>
+        `;
+    });
 
     return `
         <!DOCTYPE html>
@@ -170,46 +169,44 @@ function generateHTML(data) {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Notion Page Display</title>
             <style>
-                /* Add your CSS styles for the slideshow here */
-                body {
-                    font-family: Arial, sans-serif;
-                    background-color: #333; /* Dark gray background */
-                    color: #ffffff; /* White text color */
-                    margin: 0; /* Remove default margin */
-                    padding: 0; /* Remove default padding */
-                }
+    /* Add your CSS styles for the slideshow here */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333; /* Dark gray background */
+            color: #ffffff; /* White text color */
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
+        }
 
-                .slide {
-                    margin: 0 auto; /* Center the slides horizontally */
-                    padding: 15px;
-                    max-width: 600px; /* Set maximum width for slides */
-                    background-color: #222; /* Darker gray background for each slide */
-                    border-radius: 10px;
-                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add shadow effect */
-                }
+        .slide {
+            margin: 0 auto; /* Center the slides horizontally */
+            padding: 15px;
+            max-width: 600px; /* Set maximum width for slides */
+            background-color: #222; /* Darker gray background for each slide */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add shadow effect */
+        }
 
-                h2 {
-                    font-size: 1.5em; /* 150% of the default font size */
-                    margin-bottom: 10px;
-                }
+        h2 {
+            font-size: 1.5em; /* 150% of the default font size */
+            margin-bottom: 10px;
+        }
 
-                p {
-                    font-size: 1.2em; /* 120% of the default font size */
-                    margin-bottom: 15px;
-                }
+        p {
+            font-size: 1.2em; /* 120% of the default font size */
+            margin-bottom: 15px;
+        }
 
-                .slide img {
-                    display: block; /* Ensure images are displayed as block elements */
-                    max-width: 100%; /* Ensure images don't exceed slide width */
-                    border-radius: 5px; /* Add rounded corners to images */
-                }
+        .slide img {
+            display: block; /* Ensure images are displayed as block elements */
+            max-width: 100%; /* Ensure images don't exceed slide width */
+            border-radius: 5px; /* Add rounded corners to images */
+        }
             </style>
         </head>
         <body>
-            <h1>Dogs</h1>
-            <div id="slide-container">
-                ${firstSlideHTML}
-            </div>
+        <h1>Dogs</h1>
+           <div id="slide-container">${slidesHTML.join('')}</div>
             <script>
                 // JavaScript code for controlling the slideshow
                 const slides = document.querySelectorAll('.slide');
@@ -224,84 +221,7 @@ function generateHTML(data) {
                 displayNextSlide(); // Display the first slide
 
                 setInterval(displayNextSlide, 3000); // Switch to the next slide every 3 seconds
-            </script>
-        </body>
+            </script>        </body>
         </html>
     `;
 }
-
-//function generateHTML(data) {
-//    const slidesHTML = data.map(item => {
-//        return `
-//            <div class="slide">
-//                <h2>${item.name}</h2>
-//                <p>${item.text}</p>
-//                ${item.photo ? `<img src="${item.photo}" alt="${item.name}">` : ''}
-//            </div>
-//        `;
-//    });
-
-//    return `
-//        <!DOCTYPE html>
-//        <html lang="en">
-//        <head>
-//            <meta charset="UTF-8">
-//            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-//            <title>Notion Page Display</title>
-//            <style>
-//    /* Add your CSS styles for the slideshow here */
-//        body {
-//            font-family: Arial, sans-serif;
-//            background-color: #333; /* Dark gray background */
-//            color: #ffffff; /* White text color */
-//            margin: 0; /* Remove default margin */
-//            padding: 0; /* Remove default padding */
-//        }
-
-//        .slide {
-//            margin: 0 auto; /* Center the slides horizontally */
-//            padding: 15px;
-//            max-width: 600px; /* Set maximum width for slides */
-//            background-color: #222; /* Darker gray background for each slide */
-//            border-radius: 10px;
-//            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add shadow effect */
-//        }
-
-//        h2 {
-//            font-size: 1.5em; /* 150% of the default font size */
-//            margin-bottom: 10px;
-//        }
-
-//        p {
-//            font-size: 1.2em; /* 120% of the default font size */
-//            margin-bottom: 15px;
-//        }
-
-//        .slide img {
-//            display: block; /* Ensure images are displayed as block elements */
-//            max-width: 100%; /* Ensure images don't exceed slide width */
-//            border-radius: 5px; /* Add rounded corners to images */
-//        }
-//            </style>
-//        </head>
-//        <body>
-//        <h1>Dogs</h1>
-//           <div id="slide-container">${slidesHTML.join('')}</div>
-//            <script>
-//                // JavaScript code for controlling the slideshow
-//                const slides = document.querySelectorAll('.slide');
-//                let currentIndex = 0;
-
-//                const displayNextSlide = () => {
-//                    slides[currentIndex].style.display = 'none'; // Hide current slide
-//                    currentIndex = (currentIndex + 1) % slides.length; // Move to next slide
-//                    slides[currentIndex].style.display = 'block'; // Show next slide
-//                };
-
-//                displayNextSlide(); // Display the first slide
-
-//                setInterval(displayNextSlide, 3000); // Switch to the next slide every 3 seconds
-//            </script>        </body>
-//        </html>
-//    `;
-//}
