@@ -179,14 +179,17 @@ function generateHTML(data) {
         }
 
         .slide {
+            display: none; /* Hide all slides initially */
             margin: 0 auto; /* Center the slides horizontally */
             padding: 15px;
-            max-width: 600px; /* Set maximum width for slides */
+            max-width: 800px; /* Set maximum width for slides */
             background-color: #222; /* Darker gray background for each slide */
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add shadow effect */
         }
-
+            .slide:first-child {
+            display: block; /* Display the first slide initially */
+        }
         h2 {
             font-size: 1.5em; /* 150% of the default font size */
             margin-bottom: 10px;
@@ -217,6 +220,19 @@ function generateHTML(data) {
                     currentIndex = (currentIndex + 1) % slides.length; // Move to next slide
                     slides[currentIndex].style.display = 'block'; // Show next slide
                 };
+                        // Function to open the window in fullscreen mode
+        const openFullscreen = () => {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.mozRequestFullScreen) { /* Firefox */
+                elem.mozRequestFullScreen();
+            } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE/Edge */
+                elem.msRequestFullscreen();
+            }
+        };
 
                 displayNextSlide(); // Display the first slide
 
