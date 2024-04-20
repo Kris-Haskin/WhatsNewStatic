@@ -107,6 +107,7 @@ exports.handler = async function (event, context) {
     try {
         const response = await fetchWhatsNewList();
         const htmlResponse = generateHTML(response);
+
         return {
             statusCode: 200,
             headers: {
@@ -220,24 +221,15 @@ function generateHTML(data) {
                     currentIndex = (currentIndex + 1) % slides.length; // Move to next slide
                     slides[currentIndex].style.display = 'block'; // Show next slide
                 };
-                        // Function to open the window in fullscreen mode
-        const openFullscreen = () => {
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen();
-            } else if (elem.mozRequestFullScreen) { /* Firefox */
-                elem.mozRequestFullScreen();
-            } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) { /* IE/Edge */
-                elem.msRequestFullscreen();
-            }
-        };
 
                 displayNextSlide(); // Display the first slide
 
                 setInterval(displayNextSlide, 3000); // Switch to the next slide every 3 seconds
+
+
+
             </script>        </body>
         </html>
     `;
 }
+

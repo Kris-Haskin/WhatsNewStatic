@@ -28,7 +28,7 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="functions\fetchNotion.js" />
+    <Content Include="netlify\functions\fetchNotion.js" />
     <Content Include="netlify.toml" />
     <Content Include="public\client.js" />
     <Content Include="public\index.html" />
@@ -39,7 +39,8 @@
     <Content Include="_redirects" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="functions\" />
+    <Folder Include="netlify\functions\" />
+    <Folder Include="netlify\" />
     <Folder Include="public\" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />
