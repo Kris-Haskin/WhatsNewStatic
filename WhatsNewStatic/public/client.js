@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+const DEFAULT_DURATION_MS = 1000;
+
 function displaySlideshow(data) {
     if (!data || data.length === 0) {
         console.warn('No slide data received.');
@@ -38,13 +40,20 @@ function displaySlideshow(data) {
             imageElement.alt = currentItem.name;
             slideContainer.appendChild(imageElement);
         }
-    };
 
-    const nextSlide = () => {
-        currentIndex = (currentIndex + 1) % data.length;
-        displaySlide();
+    //const nextSlide = () => {
+    //    currentIndex = (currentIndex + 1) % data.length;
+    //    displaySlide();
+
+    // Use slide's duration if set, otherwise fall back to default
+    const slideDuration = currentItem.duration
+        ? currentItem.duration * 1000
+        : DEFAULT_DURATION_MS;
+
+    currentIndex = (currentIndex + 1) % data.length;
+    setTimeout(displaySlide, slideDuration);
     };
 
     displaySlide();
-    setInterval(nextSlide, 5000);
-}
+   // setInterval(nextSlide, 5000);
+   }

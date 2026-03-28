@@ -44,11 +44,13 @@ function processWhatsNewList(whatsNewList) {
         if (entry.properties.Photo && entry.properties.Photo.files && entry.properties.Photo.files.length > 0) {
             photoUrl = entry.properties.Photo.files[0].file.url;
         }
-
+        const duration = entry.properties.Duration?.number ?? null;
+        console.log('Duration for', nameData, ':', duration);
         return {
             name: nameData,
             text: textData,
             photo: photoUrl,
+            duration: duration,
         };
     });
 }
