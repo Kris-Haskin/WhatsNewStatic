@@ -1,7 +1,6 @@
 [build]
-	functions = "functions"
+  publish = "public"
+  functions = "netlify/functions"   # matches your actual folder path
 
-	[functions]
-  directory = "functions"
-
-
+[functions]
+  node_bundler = "esbuild"
