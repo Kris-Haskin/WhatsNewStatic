@@ -5,47 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dogs</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #333;
-            color: #fff;
+        *, *::before, *::after {
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
 
-        .slide {
-            display: none;
-            margin: 0 auto;
-            padding: 15px;
-            max-width: 800px;
-            background-color: #222;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #111;
+            color: #fff;
+            font-family: Arial, sans-serif;
         }
 
-            .slide.active {
-                display: block;
+        #slide-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 20px 10px;
+        }
+
+            /* When no photo: vertically center title + text */
+            #slide-container.no-photo {
+                justify-content: center;
+                gap: 24px;
             }
 
-        h2 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
+            #slide-container h2 {
+                font-size: 2.2em;
+                text-align: center;
+                flex-shrink: 0;
+                margin-bottom: 8px;
+            }
+
+            #slide-container .img-wrapper {
+                flex: 1;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 0;
+            }
+
+            #slide-container img {
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 10px;
+                object-fit: contain;
+            }
+
+            #slide-container p {
+                font-size: 1.6em;
+                text-align: center;
+                flex-shrink: 0;
+                margin-top: 8px;
+            }
+
+        /* Tap-to-start overlay */
+        #start-overlay {
+            position: fixed;
+            inset: 0;
+            background: #111;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
         }
 
-        p {
-            font-size: 1.2em;
-            margin-bottom: 15px;
-        }
+            #start-overlay h1 {
+                font-size: 3em;
+                margin-bottom: 30px;
+            }
 
-        .slide img {
-            display: block;
-            max-width: 100%;
-            border-radius: 5px;
-        }
+            #start-overlay button {
+                font-size: 1.5em;
+                padding: 20px 50px;
+                border: none;
+                border-radius: 10px;
+                background: #444;
+                color: #fff;
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+
+                #start-overlay button:hover {
+                    background: #666;
+                }
     </style>
 </head>
 <body>
-    <h1>Dogs</h1>
+    <div id="start-overlay">
+        <h1>🐾 Dogs</h1>
+        <button id="start-btn">▶ Start Slideshow</button>
+    </div>
+
     <div id="slide-container"></div>
     <script src="client.js"></script>
 </body>
