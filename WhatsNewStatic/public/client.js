@@ -7,20 +7,34 @@ let currentIndex = 0;
 // ??? Data fetching ????????????????????????????????????????????????????????????
 
 async function fetchAllSources() {
-    const [notionResult /*, igResult */] = await Promise.allSettled([
+    const [notionResult, igResult] = await Promise.allSettled([ /*, igResult */ // ? uncomment when ready
         fetch('/.netlify/functions/fetchNotion').then(r => r.json()),
-        // fetch('/.netlify/functions/fetchInstagram').then(r => r.json()),  // ? uncomment when ready
+        fetch('/.netlify/functions/fetchInstagram').then(r => r.json()),  // ? uncomment when ready
     ]);
 
     const notionSlides = notionResult.status === 'fulfilled' ? notionResult.value : [];
-    // const igSlides = igResult.status === 'fulfilled' ? igResult.value : [];
+    const igSlides = igResult.status === 'fulfilled' ? igResult.value : []; // ? uncomment when ready
 
-    return [
-        ...notionSlides,
-        // ...interleave(notionSlides, igSlides),  // ? swap in when Instagram is ready
-    ];
+
+    return interleave(notionSlides, igSlides)  // ? swap in when Instagram is ready
+    
+    }
+function interleave(notionSlides, igSlides) {
+    if (igSlides.length === 0) return notionSlides;
+
+    const result = [];
+    let igIndex = 0;
+
+    notionSlides.forEach((slide, i) => {
+        result.push(slide);
+        // Insert an Instagram slide every 4 Notion slides
+        if ((i + 1) % 4 === 0 && igIndex < igSlides.length) {
+            result.push(igSlides[igIndex++]);
+        }
+    });
+
+    return result;
 }
-
 async function refreshSlides() {
     try {
         const fresh = await fetchAllSources();
@@ -114,104 +128,3 @@ function displaySlide() {
     setTimeout(displaySlide, slideDuration);
 }
 
-//const DEFAULT_DURATION_MS = 5000;
-
-//let slideshowData = null;
-
-//async function prefetchData() {
-//    try {
-//        const response = await fetch('/.netlify/functions/fetchNotion');
-//        slideshowData = await response.json();
-//        console.log('Fetched data:', slideshowData);
-//    } catch (error) {
-//        console.error('Error fetching data:', error);
-//    }
-//}
-
-//function requestFullscreen() {
-//    const el = document.documentElement;
-//    if (el.requestFullscreen) {
-//        el.requestFullscreen();
-//    } else if (el.webkitRequestFullscreen) {
-//        el.webkitRequestFullscreen();
-//    } else if (el.mozRequestFullScreen) {
-//        el.mozRequestFullScreen();
-//    } else if (el.msRequestFullscreen) {
-//        el.msRequestFullscreen();
-//    }
-//}
-
-//document.addEventListener('DOMContentLoaded', () => {
-//    prefetchData();
-
-//    const overlay = document.getElementById('start-overlay');
-//    const startBtn = document.getElementById('start-btn');
-
-//    overlay.addEventListener('click', () => {
-//        requestFullscreen();
-//        overlay.style.display = 'none';
-
-//        if (slideshowData && slideshowData.length > 0) {
-//            displaySlideshow(slideshowData);
-//        } else {
-//            overlay.style.display = 'flex';
-//            startBtn.textContent = 'Loading...';
-//            const waitForData = setInterval(() => {
-//                if (slideshowData && slideshowData.length > 0) {
-//                    clearInterval(waitForData);
-//                    overlay.style.display = 'none';
-//                    displaySlideshow(slideshowData);
-//                }
-//            }, 500);
-//        }
-//    });
-//});
-
-//function displaySlideshow(data) {
-//    const slideContainer = document.getElementById('slide-container');
-//    let currentIndex = 0;
-
-//    const displaySlide = () => {
-//        const currentItem = data[currentIndex];
-//        slideContainer.innerHTML = '';
-
-//        // Toggle layout mode based on whether a photo exists
-//        if (currentItem.photo) {
-//            slideContainer.classList.remove('no-photo');
-//        } else {
-//            slideContainer.classList.add('no-photo');
-//        }
-
-//        // Title — top (or centered when no photo)
-//        const nameElement = document.createElement('h2');
-//        nameElement.textContent = currentItem.name;
-//        slideContainer.appendChild(nameElement);
-
-//        // Image — fills middle (skipped when no photo)
-//        if (currentItem.photo) {
-//            const imgWrapper = document.createElement('div');
-//            imgWrapper.className = 'img-wrapper';
-
-//            const imageElement = document.createElement('img');
-//            imageElement.src = currentItem.photo;
-//            imageElement.alt = currentItem.name;
-
-//            imgWrapper.appendChild(imageElement);
-//            slideContainer.appendChild(imgWrapper);
-//        }
-
-//        // Text — bottom (or centered when no photo)
-//        const textElement = document.createElement('p');
-//        textElement.textContent = currentItem.text;
-//        slideContainer.appendChild(textElement);
-
-//        const slideDuration = currentItem.duration
-//            ? currentItem.duration * 1000
-//            : DEFAULT_DURATION_MS;
-
-//        currentIndex = (currentIndex + 1) % data.length;
-//        setTimeout(displaySlide, slideDuration);
-//    };
-
-//    displaySlide();
-//}

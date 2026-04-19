@@ -37,6 +37,9 @@
     <Content Include=".gitignore">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="netlify\functions\fetchInstagram.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="netlify\functions\fetchNotion.js" />
     <Content Include="netlify.toml" />
     <Content Include="public\client.js" />

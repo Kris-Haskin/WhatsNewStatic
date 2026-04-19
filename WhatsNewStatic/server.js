@@ -4,6 +4,7 @@ require('dotenv').config();  // loads .env into process.env
 const express = require('express');
 const path = require('path');
 const { handler } = require('./netlify/functions/fetchNotion');
+const { handler: igHandler } = require('./netlify/functions/fetchInstagram');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +15,15 @@ app.get('/.netlify/functions/fetchNotion', async (req, res) => {
     const result = await handler({}, {});
     res.status(result.statusCode).set(result.headers).send(result.body);
 });
+
+
+app.get('/.netlify/functions/fetchInstagram', async (req, res) => {
+    const result = await igHandler({}, {});
+    res.status(result.statusCode).set(result.headers).send(result.body);
+});
+
+
+
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
