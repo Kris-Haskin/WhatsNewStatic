@@ -1,9 +1,13 @@
 const DEFAULT_DURATION_MS = 5000;
 const REFRESH_INTERVAL_MS = 45 * 60 * 1000; // 45 minutes — before Notion URLs expire
 
-let slides = [];
+let rotationSlides = [];
+let scheduledSlides = [];
 let currentIndex = 0;
-
+let rotationTimeoutId = null;
+let isShowingScheduled = false;
+let firedToday = {};
+let firedDate = "";
 // ??? Data fetching ????????????????????????????????????????????????????????????
 
 async function fetchAllSources() {
@@ -39,9 +43,12 @@ async function refreshSlides() {
     try {
         const fresh = await fetchAllSources();
         if (fresh.length > 0) {
-            slides = fresh;
-            currentIndex = currentIndex % slides.length; // stay in bounds if count changed
-            console.log(`Slides refreshed: ${slides.length} loaded`);
+            rotationSlides = fresh.filter(s => !s.scheduledTime);
+            scheduledSlides = fresh.filter(s => s.scheduledTime);
+            if (rotationSlides.length > 0) {
+                currentIndex = currentIndex % rotationSlides.length;
+            }
+            console.log(`Slides refreshed: ${rotationSlides.length} rotation, ${scheduledSlides.length} scheduled`);
         }
     } catch (err) {
         console.error('Slide refresh failed:', err);
@@ -73,12 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
         requestFullscreen();
         overlay.style.display = 'none';
 
-        if (slides.length > 0) {
+        if (rotationSlides.length > 0) {
             displaySlide();
         } else {
             startBtn.textContent = 'Loading...';
             const waitForData = setInterval(() => {
-                if (slides.length > 0) {
+                if (rotationSlides.length > 0) {
                     clearInterval(waitForData);
                     overlay.style.display = 'none';
                     displaySlide();
@@ -90,41 +97,121 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ??? Slideshow ????????????????????????????????????????????????????????????????
 
-function displaySlide() {
-    const slideContainer = document.getElementById('slide-container');
-    const currentItem = slides[currentIndex];
+// REMOVE the entire existing displaySlide function and REPLACE with all of this:
 
+// ??? Helpers ??????????????????????????????????????????????????????????????????
+
+function getCurrentHHMM() {
+    const now = new Date();
+    return now.getHours().toString().padStart(2, "0") + ":" +
+        now.getMinutes().toString().padStart(2, "0");
+}
+
+function getTodayName() {
+    return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    [new Date().getDay()];
+}
+
+function getTodayDateString() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function getDurationMs(slide) {
+    return slide.duration ? slide.duration * 1000 : DEFAULT_DURATION_MS;
+}
+
+// ??? Slide rendering ??????????????????????????????????????????????????????????
+
+function renderSlide(item) {
+    const slideContainer = document.getElementById('slide-container');
     slideContainer.innerHTML = '';
 
-    if (currentItem.photo) {
+    if (item.photo) {
         slideContainer.classList.remove('no-photo');
     } else {
         slideContainer.classList.add('no-photo');
     }
 
     const nameElement = document.createElement('h2');
-    nameElement.textContent = currentItem.name;
+    nameElement.textContent = item.name;
     slideContainer.appendChild(nameElement);
 
-    if (currentItem.photo) {
+    if (item.photo) {
         const imgWrapper = document.createElement('div');
         imgWrapper.className = 'img-wrapper';
         const imageElement = document.createElement('img');
-        imageElement.src = currentItem.photo;
-        imageElement.alt = currentItem.name;
+        imageElement.src = item.photo;
+        imageElement.alt = item.name;
         imgWrapper.appendChild(imageElement);
         slideContainer.appendChild(imgWrapper);
     }
 
     const textElement = document.createElement('p');
-    textElement.textContent = currentItem.text;
+    textElement.textContent = item.text;
     slideContainer.appendChild(textElement);
-
-    const slideDuration = currentItem.duration
-        ? currentItem.duration * 1000
-        : DEFAULT_DURATION_MS;
-
-    currentIndex = (currentIndex + 1) % slides.length;
-    setTimeout(displaySlide, slideDuration);
 }
 
+// ??? Rotation loop ????????????????????????????????????????????????????????????
+
+function displaySlide() {
+    if (isShowingScheduled || rotationSlides.length === 0) return;
+
+    const slide = rotationSlides[currentIndex];
+    renderSlide(slide);
+
+    rotationTimeoutId = setTimeout(() => {
+        currentIndex = (currentIndex + 1) % rotationSlides.length;
+        displaySlide();
+    }, getDurationMs(slide));
+}
+
+// ??? Scheduled slide playback ?????????????????????????????????????????????????
+
+function playScheduledQueue(queue, index, onAllDone) {
+    if (index >= queue.length) {
+        onAllDone();
+        return;
+    }
+    const slide = queue[index];
+    renderSlide(slide);
+    setTimeout(() => {
+        playScheduledQueue(queue, index + 1, onAllDone);
+    }, getDurationMs(slide));
+}
+
+// ??? Scheduled slide check (every 30 seconds) ?????????????????????????????????
+
+setInterval(() => {
+    const today = getTodayDateString();
+    if (today !== firedDate) {
+        firedDate = today;
+        firedToday = {};
+    }
+
+    const now = getCurrentHHMM();
+    const todayName = getTodayName();
+
+    const toFire = scheduledSlides.filter(slide => {
+        if (slide.scheduledTime !== now) return false;
+        const dayMatches = !slide.scheduledDay ||
+            slide.scheduledDay === "Everyday" ||
+            slide.scheduledDay === todayName;
+        if (!dayMatches) return false;
+        const key = slide.scheduledTime + "_" + slide.name;
+        if (firedToday[key]) return false;
+        return true;
+    });
+
+    if (toFire.length === 0) return;
+
+    toFire.forEach(s => { firedToday[s.scheduledTime + "_" + s.name] = true; });
+
+    isShowingScheduled = true;
+    clearTimeout(rotationTimeoutId);
+
+    playScheduledQueue(toFire, 0, () => {
+        isShowingScheduled = false;
+        displaySlide(); // resumes from currentIndex — no reset
+    });
+
+}, 30000);

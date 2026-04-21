@@ -36,8 +36,11 @@ exports.handler = async function (event, context) {
 async function fetchWhatsNewList() {
     const response = await notion.databases.query({
         database_id: pageId,
+        filter: {
+            property: "Active",
+            checkbox: { equals: true }
+        }
     });
-
 
     // TEMP: log raw properties of first entry
     console.log('RAW PROPERTIES:', JSON.stringify(response.results[0].properties, null, 2));
@@ -66,6 +69,8 @@ function processWhatsNewList(whatsNewList) {
             photo: photoUrl,
             duration: duration,
 
+            scheduledTime: entry.properties["Scheduled Time"]?.select?.name ?? null,
+            scheduledDay: entry.properties["Scheduled Day"]?.select?.name ?? "Everyday",
         };
     });
 
