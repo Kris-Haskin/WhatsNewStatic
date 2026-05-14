@@ -19,7 +19,19 @@ exports.handler = async function (event, context) {
     try {
         const store = getStore('document-folder');
 
-        const { blobs } = await store.list();
+        let blobs = [];
+        try {
+            const result = await store.list();
+            blobs = result.blobs ?? [];
+        } catch (listErr) {
+            // Store doesn't exist yet (no images uploaded) — return empty list
+            console.log('document-folder store empty or not yet created:', listErr.message);
+            return {
+                statusCode: 200,
+                headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+                body: JSON.stringify([]),
+            };
+        }
 
         const slides = blobs
             .filter(blob => IMAGE_EXT.test(blob.key))
