@@ -5,6 +5,8 @@ const express = require('express');
 const path = require('path');
 const { handler } = require('./netlify/functions/fetchNotion');
 const { handler: igHandler } = require('./netlify/functions/fetchInstagram');
+const { handler: configHandler } = require('./netlify/functions/fetchConfig');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,7 +24,10 @@ app.get('/.netlify/functions/fetchInstagram', async (req, res) => {
     res.status(result.statusCode).set(result.headers).send(result.body);
 });
 
-
+app.get('/.netlify/functions/fetchConfig', async (req, res) => {
+    const result = await configHandler({}, {});
+    res.status(result.statusCode).set(result.headers).send(result.body);
+});
 
 
 app.listen(PORT, () => {

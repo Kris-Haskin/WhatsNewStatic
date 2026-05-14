@@ -37,6 +37,8 @@
     <Content Include=".gitignore">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="InstagramAPIGuide\API_setup_guide.md" />
+    <Content Include="netlify\functions\fetchConfig.js" />
     <Content Include="netlify\functions\fetchInstagram.js">
       <SubType>Code</SubType>
     </Content>
@@ -53,6 +55,7 @@
   <ItemGroup>
     <Folder Include="netlify\functions\" />
     <Folder Include="netlify\" />
+    <Folder Include="InstagramAPIGuide\" />
     <Folder Include="public\" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />

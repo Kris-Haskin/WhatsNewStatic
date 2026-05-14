@@ -1,6 +1,12 @@
 const DEFAULT_DURATION_MS = 5000;
 const REFRESH_INTERVAL_MS = 45 * 60 * 1000; // 45 minutes — before Notion URLs expire
 
+let appConfig = {
+    instagramActive: true,
+    instagramDuration: 8,
+    instagramFrequency: 4,
+};
+
 let rotationSlides = [];
 let scheduledSlides = [];
 let currentIndex = 0;
@@ -11,19 +17,37 @@ let firedDate = "";
 // ??? Data fetching ????????????????????????????????????????????????????????????
 
 async function fetchAllSources() {
-    const [notionResult, igResult] = await Promise.allSettled([ /*, igResult */ // ? uncomment when ready
+    const [notionResult, igResult, configResult] = await Promise.allSettled([ /*, igResult */ // ? uncomment when ready
         fetch('/.netlify/functions/fetchNotion').then(r => r.json()),
         fetch('/.netlify/functions/fetchInstagram').then(r => r.json()),  // ? uncomment when ready
+        fetch('/.netlify/functions/fetchConfig').then(r => r.json()),
+
     ]);
+    if (configResult.status === 'fulfilled') {
+        const cfg = configResult.value;
+        appConfig.instagramActive = cfg['Instagram Active'] !== 'false';
+        appConfig.instagramDuration = parseInt(cfg['Instagram Duration']) || 8;
+        appConfig.instagramFrequency = parseInt(cfg['Instagram Frequency']) || 4;
+    }
 
     const notionSlides = notionResult.status === 'fulfilled' ? notionResult.value : [];
-    const igSlides = igResult.status === 'fulfilled' ? igResult.value : []; // ? uncomment when ready
+
+    const rawIgSlides = (igResult.status === 'fulfilled' && appConfig.instagramActive && Array.isArray(igResult.value))
+        ? igResult.value
+        : [];
+
+    //const igSlides = igResult.status === 'fulfilled' ? igResult.value : []; // ? uncomment when ready
+
+    const igSlides = rawIgSlides.map(s => ({
+        ...s,
+        duration: appConfig.instagramDuration
+    }));
 
 
-    return interleave(notionSlides, igSlides)  // ? swap in when Instagram is ready
+    return interleave(notionSlides, igSlides, appConfig.instagramFrequency)  // ? swap in when Instagram is ready
     
     }
-function interleave(notionSlides, igSlides) {
+function interleave(notionSlides, igSlides, frequency = 4) {
     if (igSlides.length === 0) return notionSlides;
 
     const result = [];
@@ -31,11 +55,15 @@ function interleave(notionSlides, igSlides) {
 
     notionSlides.forEach((slide, i) => {
         result.push(slide);
-        // Insert an Instagram slide every 4 Notion slides
-        if ((i + 1) % 4 === 0 && igIndex < igSlides.length) {
+        if ((i + 1) % frequency === 0 && igIndex < igSlides.length) {
             result.push(igSlides[igIndex++]);
         }
     });
+
+    while (igIndex < igSlides.length) {
+        result.push(igSlides[igIndex++]);
+    }
+
 
     return result;
 }
