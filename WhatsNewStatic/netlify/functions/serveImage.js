@@ -25,7 +25,11 @@ exports.handler = async function (event, context) {
     }
 
     try {
-        const store = getStore('document-folder');
+        const store = getStore({
+            name:   'document-folder',
+            siteID: process.env.NETLIFY_SITE_ID,
+            token:  process.env.NETLIFY_TOKEN,
+        });
         const data  = await store.get(key, { type: 'arrayBuffer' });
 
         if (!data) {

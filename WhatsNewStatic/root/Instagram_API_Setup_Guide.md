@@ -164,7 +164,7 @@ You should get back something like:
       "id": "1133583333164153",
       "name": "Client Page Name",
       "instagram_business_account": {
-        "id": "17841454455327922"
+        "id": "YOUR_INSTAGRAM_USER_ID"
       }
     }
   ]

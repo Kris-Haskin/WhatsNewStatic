@@ -1,5 +1,5 @@
 # Instagram Graph API Setup Guide
-### For WhatsNewStatic — TV Slideshow App
+### For WhatsNewStatic ï¿½ TV Slideshow App
 
 ---
 
@@ -7,7 +7,7 @@
 
 This guide walks through connecting a client's Instagram Business account to the Meta Graph API so that posts can be fetched and displayed in the WhatsNewStatic slideshow app. You will end up with a long-lived access token and an Instagram User ID to put in the app's `.env` file.
 
-**Time estimate:** 30–45 minutes if everything goes smoothly.
+**Time estimate:** 30ï¿½45 minutes if everything goes smoothly.
 
 **What you need before starting:**
 - Access to the client's Instagram account (logged in on a phone)
@@ -16,7 +16,7 @@ This guide walks through connecting a client's Instagram Business account to the
 
 ---
 
-## PART 1 — Instagram Account Setup
+## PART 1 ï¿½ Instagram Account Setup
 
 ### Step 1: Upgrade Instagram to a Professional (Business) Account
 
@@ -29,7 +29,7 @@ The Instagram Graph API does not work with personal accounts. The account must b
 5. Tap **Account**
 6. Scroll down and tap **Switch to Professional Account**
 7. Choose **Business** (not Creator)
-8. Follow the prompts — category doesn't matter much, choose something generic like "App Page" or "Local Business"
+8. Follow the prompts ï¿½ category doesn't matter much, choose something generic like "App Page" or "Local Business"
 
 ### Step 2: Create a Facebook Page
 
@@ -38,10 +38,10 @@ The Instagram Graph API requires the Instagram account to be linked to a Faceboo
 1. On desktop, go to [facebook.com](https://facebook.com) and log in
 2. Click the **Pages** section in the left sidebar (or go to facebook.com/pages/create)
 3. Click **Create New Page**
-4. Give it a name — something like "[Client Name] Demo" or their actual business name
+4. Give it a name ï¿½ something like "[Client Name] Demo" or their actual business name
 5. Fill in minimal info and click **Create**
 
-> **Note:** Facebook will warn you that "page health needs work" — this is about filling in hours, phone numbers, etc. You can ignore this. It does not affect API access.
+> **Note:** Facebook will warn you that "page health needs work" ï¿½ this is about filling in hours, phone numbers, etc. You can ignore this. It does not affect API access.
 
 ### Step 3: Link the Instagram Account to the Facebook Page
 
@@ -51,7 +51,7 @@ The Instagram Graph API requires the Instagram account to be linked to a Faceboo
 
 ---
 
-## PART 2 — Meta Developer App Setup
+## PART 2 ï¿½ Meta Developer App Setup
 
 All of this is done at [developers.facebook.com](https://developers.facebook.com) on desktop, logged in with the client's Facebook account.
 
@@ -76,10 +76,10 @@ You will land on the app dashboard.
 2. Scroll through the list and find **"Manage messaging & content on Instagram"**
 3. Check the checkbox next to it
 4. Click **Save**
-5. You will be back on the Use Cases screen — click **Customize** next to the Instagram one
+5. You will be back on the Use Cases screen ï¿½ click **Customize** next to the Instagram one
 6. In the left sidebar, click **"API setup with Facebook login"**
 7. Under **"Manage content on Instagram"**, click **"Add required content permissions"**
-8. A green success message will briefly appear — that's all you need here
+8. A green success message will briefly appear ï¿½ that's all you need here
 
 ### Step 6: Add Yourself as a Tester
 
@@ -102,7 +102,7 @@ Back on the developer portal, the tester status should change from "Pending" to 
 
 ---
 
-## PART 3 — Generating the Access Token
+## PART 3 ï¿½ Generating the Access Token
 
 ### Step 8: Generate a Short-Lived Token
 
@@ -116,14 +116,14 @@ Back on the developer portal, the tester status should change from "Pending" to 
    - `business_management`
 4. Click **Generate Access Token**
 5. Log in and approve all requested permissions when prompted
-6. Copy the token that appears in the Access Token field — this is your **short-lived token** (expires in ~1 hour)
+6. Copy the token that appears in the Access Token field ï¿½ this is your **short-lived token** (expires in ~1 hour)
 
 ### Step 9: Exchange for a Long-Lived Token (60 days)
 
 You need three things:
-- **App ID** — found under App Settings ? Basic
-- **App Secret** — found under App Settings ? Basic (click Show to reveal)
-- **Short-lived token** — from Step 8
+- **App ID** ï¿½ found under App Settings ? Basic
+- **App Secret** ï¿½ found under App Settings ? Basic (click Show to reveal)
+- **Short-lived token** ï¿½ from Step 8
 
 Open a new browser tab and paste this URL, substituting your values:
 
@@ -147,7 +147,7 @@ Hit Enter. You should get a JSON response like this:
 
 ---
 
-## PART 4 — Get the Instagram User ID
+## PART 4 ï¿½ Get the Instagram User ID
 
 Open a new browser tab and paste this URL with your long-lived token:
 
@@ -164,7 +164,7 @@ You should get back something like:
       "id": "1133583333164153",
       "name": "Client Page Name",
       "instagram_business_account": {
-        "id": "17841454455327922"
+        "id": "YOUR_INSTAGRAM_USER_ID"
       }
     }
   ]
@@ -177,7 +177,7 @@ The **`id` inside `instagram_business_account`** is your Instagram User ID. Save
 
 ---
 
-## PART 5 — Verify It Works
+## PART 5 ï¿½ Verify It Works
 
 Paste this URL in a browser tab to confirm posts are accessible:
 
@@ -189,7 +189,7 @@ You should see the client's recent posts in the JSON response.
 
 ---
 
-## PART 6 — Update the App
+## PART 6 ï¿½ Update the App
 
 ### Update `.env`
 
@@ -204,11 +204,11 @@ Also update these in **Netlify's environment variables** (Netlify dashboard ? Si
 
 ### `fetchInstagram.js`
 
-The function is already written and in place. No code changes needed — just the `.env` values.
+The function is already written and in place. No code changes needed ï¿½ just the `.env` values.
 
 ---
 
-## PART 7 — Token Refresh (Important)
+## PART 7 ï¿½ Token Refresh (Important)
 
 The long-lived token expires in **60 days**. Before it expires, refresh it by calling:
 
@@ -243,4 +243,4 @@ This returns a new token with a fresh 60-day window. Update the `.env` file and 
 | `data: []` on `/me/accounts` | Missing page permissions | Add `pages_show_list`, `pages_read_engagement` in Explorer, regenerate |
 | "nonexisting field instagram_business_account" | Token is a user token, not a page token | Use `/me/accounts` endpoint, not `/me` directly |
 | Instagram slides missing from slideshow | `Array.isArray` check failing | Confirm `fetchInstagram` endpoint returns a JSON array, not an error object |
-| "Session has expired" | Long-lived token expired | Redo Steps 8–9 to get a fresh token |
+| "Session has expired" | Long-lived token expired | Redo Steps 8ï¿½9 to get a fresh token |

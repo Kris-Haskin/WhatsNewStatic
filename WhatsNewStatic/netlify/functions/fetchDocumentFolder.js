@@ -17,7 +17,11 @@ const IMAGE_EXT = /\.(jpg|jpeg|png|gif|webp)$/i;
 
 exports.handler = async function (event, context) {
     try {
-        const store = getStore('document-folder');
+        const store = getStore({
+            name:   'document-folder',
+            siteID: process.env.NETLIFY_SITE_ID,
+            token:  process.env.NETLIFY_TOKEN,
+        });
 
         let blobs = [];
         try {
