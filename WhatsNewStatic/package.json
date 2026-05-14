@@ -11,6 +11,7 @@
     "eslint": "^8.21.0"
   },
   "dependencies": {
+    "@netlify/blobs": "^8.1.0",
     "@notionhq/client": "^2.2.14"
   }
 }

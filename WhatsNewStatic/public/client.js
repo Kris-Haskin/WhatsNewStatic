@@ -1,121 +1,182 @@
 const DEFAULT_DURATION_MS = 5000;
-const REFRESH_INTERVAL_MS = 45 * 60 * 1000; // 45 minutes � before Notion URLs expire
+const REFRESH_INTERVAL_MS = 45 * 60 * 1000; // 45 min — before Notion S3 URLs expire
 
+// ─── App Config (defaults; overwritten by Notion App Config on load) ──────────
 let appConfig = {
-    instagramActive: true,
+    notionActive:      true,
+    notionFrequency:   1,
+    instagramActive:   true,
     instagramDuration: 8,
-    instagramFrequency: 4,
+    instagramFrequency: 2,
+    folderActive:      false,
+    folderFrequency:   6,
+    folderDuration:    5,
 };
 
-let rotationSlides = [];
+// ─── Source Arrays (each loops independently) ─────────────────────────────────
+let notionSlides    = [];
+let igSlides        = [];
+let folderSlides    = [];
 let scheduledSlides = [];
-let currentIndex = 0;
-let rotationTimeoutId = null;
+
+// ─── Playback State ───────────────────────────────────────────────────────────
+let pattern      = [];   // e.g. ['notion','folder','folder','ig','folder','folder','notion',...]
+let patternIndex = 0;    // current position in the repeating pattern
+let notionIndex  = 0;    // cycles independently through notionSlides
+let igIndex      = 0;    // cycles independently through igSlides
+let folderIndex  = 0;    // cycles independently through folderSlides
+
+let rotationTimeoutId  = null;
 let isShowingScheduled = false;
 let firedToday = {};
-let firedDate = "";
-// ??? Data fetching ????????????????????????????????????????????????????????????
+let firedDate  = "";
 
-async function fetchAllSources() {
-    const [notionResult, igResult, configResult] = await Promise.allSettled([ /*, igResult */ // ? uncomment when ready
-        fetch('/.netlify/functions/fetchNotion').then(r => r.json()),
-        fetch('/.netlify/functions/fetchInstagram').then(r => r.json()),  // ? uncomment when ready
-        fetch('/.netlify/functions/fetchConfig').then(r => r.json()),
+// ─── Pattern Builder ──────────────────────────────────────────────────────────
+// Uses a Bresenham-style error accumulation so slots are distributed as evenly
+// as possible across the cycle, regardless of frequency ratios.
+//
+// Example — Notion:1, Instagram:2, Folder:6  →  9-slot cycle:
+//   folder › ig › folder › folder › notion › folder › ig › folder › folder
+//
+// To disable a source entirely set its frequency to 0 in App Config.
+function buildPattern() {
+    const sources = [];
+    if (appConfig.notionActive    && notionSlides.length > 0 && appConfig.notionFrequency    > 0)
+        sources.push({ key: 'notion', count: appConfig.notionFrequency });
+    if (appConfig.instagramActive && igSlides.length     > 0 && appConfig.instagramFrequency > 0)
+        sources.push({ key: 'ig',     count: appConfig.instagramFrequency });
+    if (appConfig.folderActive    && folderSlides.length  > 0 && appConfig.folderFrequency    > 0)
+        sources.push({ key: 'folder', count: appConfig.folderFrequency });
 
-    ]);
-    if (configResult.status === 'fulfilled') {
-        const cfg = configResult.value;
-        appConfig.instagramActive = cfg['Instagram Active'] !== 'false';
-        appConfig.instagramDuration = parseInt(cfg['Instagram Duration']) || 8;
-        appConfig.instagramFrequency = parseInt(cfg['Instagram Frequency']) || 4;
-    }
+    if (sources.length === 0) return [];
+    if (sources.length === 1) return Array(sources[0].count).fill(sources[0].key);
 
-    const notionSlides = notionResult.status === 'fulfilled' ? notionResult.value : [];
-
-    const rawIgSlides = (igResult.status === 'fulfilled' && appConfig.instagramActive && Array.isArray(igResult.value))
-        ? igResult.value
-        : [];
-
-    //const igSlides = igResult.status === 'fulfilled' ? igResult.value : []; // ? uncomment when ready
-
-    const igSlides = rawIgSlides.map(s => ({
-        ...s,
-        duration: appConfig.instagramDuration
-    }));
-
-
-    return interleave(notionSlides, igSlides, appConfig.instagramFrequency)  // ? swap in when Instagram is ready
-    
-    }
-function interleave(notionSlides, igSlides, frequency = 4) {
-    if (igSlides.length === 0) return notionSlides;
-
+    const total  = sources.reduce((sum, s) => sum + s.count, 0);
     const result = [];
-    let igIndex = 0;
+    const errors = new Array(sources.length).fill(0);
 
-    notionSlides.forEach((slide, i) => {
-        result.push(slide);
-        if ((i + 1) % frequency === 0 && igIndex < igSlides.length) {
-            result.push(igSlides[igIndex++]);
+    for (let i = 0; i < total; i++) {
+        sources.forEach((s, idx) => { errors[idx] += s.count; });
+        let maxIdx = 0;
+        for (let j = 1; j < errors.length; j++) {
+            if (errors[j] > errors[maxIdx]) maxIdx = j;
         }
-    });
-
-    while (igIndex < igSlides.length) {
-        result.push(igSlides[igIndex++]);
+        result.push(sources[maxIdx].key);
+        errors[maxIdx] -= total;
     }
-
 
     return result;
 }
+
+// ─── Data Fetching ────────────────────────────────────────────────────────────
+async function fetchAllSources() {
+    // Config is fetched in the same allSettled call so a single failure never
+    // crashes the show. Config is applied first so source filtering uses
+    // up-to-date settings.
+    const [notionResult, configResult, igResult, folderResult] = await Promise.allSettled([
+        fetch('/.netlify/functions/fetchNotion').then(r => r.json()),
+        fetch('/.netlify/functions/fetchConfig').then(r => r.json()),
+        fetch('/.netlify/functions/fetchInstagram').then(r => r.json()),
+        fetch('/.netlify/functions/fetchDocumentFolder').then(r => r.json()),
+    ]);
+
+    if (configResult.status === 'fulfilled') {
+        const cfg = configResult.value;
+        appConfig.notionActive      = cfg['Notion Active']      !== 'false';
+        appConfig.notionFrequency   = Math.max(0, parseInt(cfg['Notion Frequency'])    || 1);
+        appConfig.instagramActive   = cfg['Instagram Active']   !== 'false';
+        appConfig.instagramDuration = parseInt(cfg['Instagram Duration'])  || 8;
+        appConfig.instagramFrequency= Math.max(0, parseInt(cfg['Instagram Frequency'])|| 2);
+        appConfig.folderActive      = cfg['Folder Active']      === 'true';
+        appConfig.folderFrequency   = Math.max(0, parseInt(cfg['Folder Frequency'])   || 6);
+        appConfig.folderDuration    = parseInt(cfg['Folder Duration'])     || 5;
+    }
+
+    const notion = notionResult.status === 'fulfilled' && Array.isArray(notionResult.value)
+        ? notionResult.value
+        : [];
+
+    const ig = igResult.status === 'fulfilled'
+            && appConfig.instagramActive
+            && Array.isArray(igResult.value)
+        ? igResult.value.map(s => ({ ...s, duration: appConfig.instagramDuration, source: 'instagram' }))
+        : [];
+
+    const folder = folderResult.status === 'fulfilled'
+                && appConfig.folderActive
+                && Array.isArray(folderResult.value)
+        ? folderResult.value.map(s => ({ ...s, duration: appConfig.folderDuration, source: 'folder' }))
+        : [];
+
+    return { notion, ig, folder };
+}
+
 async function refreshSlides() {
     try {
-        const fresh = await fetchAllSources();
-        if (fresh.length > 0) {
-            rotationSlides = fresh.filter(s => !s.scheduledTime);
-            scheduledSlides = fresh.filter(s => s.scheduledTime);
-            if (rotationSlides.length > 0) {
-                currentIndex = currentIndex % rotationSlides.length;
+        const { notion, ig, folder } = await fetchAllSources();
+
+        const rotation  = notion.filter(s => !s.scheduledTime);
+        const scheduled = notion.filter(s =>  s.scheduledTime);
+
+        // Only update if at least one source has content
+        if (rotation.length > 0 || ig.length > 0 || folder.length > 0) {
+            notionSlides    = rotation;
+            igSlides        = ig;
+            folderSlides    = folder;
+            scheduledSlides = scheduled;
+
+            // Keep per-source cursors in range after a refresh
+            if (notionSlides.length  > 0) notionIndex  = notionIndex  % notionSlides.length;
+            if (igSlides.length      > 0) igIndex      = igIndex      % igSlides.length;
+            if (folderSlides.length  > 0) folderIndex  = folderIndex  % folderSlides.length;
+
+            // Rebuild pattern; preserve approximate position across refreshes
+            const newPattern = buildPattern();
+            if (newPattern.length > 0) {
+                patternIndex = pattern.length > 0
+                    ? Math.round((patternIndex / pattern.length) * newPattern.length) % newPattern.length
+                    : 0;
             }
-            console.log(`Slides refreshed: ${rotationSlides.length} rotation, ${scheduledSlides.length} scheduled`);
+            pattern = newPattern;
+
+            console.log(
+                `Slides refreshed — notion:${notionSlides.length} ` +
+                `ig:${igSlides.length} folder:${folderSlides.length} ` +
+                `scheduled:${scheduledSlides.length}`
+            );
+            console.log('Pattern:', pattern.join(' › '));
         }
     } catch (err) {
         console.error('Slide refresh failed:', err);
     }
 }
 
-// ??? Fullscreen ???????????????????????????????????????????????????????????????
-
+// ─── Fullscreen ───────────────────────────────────────────────────────────────
 function requestFullscreen() {
     const el = document.documentElement;
-    if (el.requestFullscreen) el.requestFullscreen();
+    if      (el.requestFullscreen)       el.requestFullscreen();
     else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
-    else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
+    else if (el.msRequestFullscreen)     el.msRequestFullscreen();
 }
 
-// ??? Startup ??????????????????????????????????????????????????????????????????
-
+// ─── Startup ──────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    refreshSlides(); // initial load
-
-    // Re-fetch on a timer to keep photo URLs fresh
+    refreshSlides();
     setInterval(refreshSlides, REFRESH_INTERVAL_MS);
 
-    const overlay = document.getElementById('start-overlay');
-    const startBtn = document.getElementById('start-btn');
+    const overlay  = document.getElementById('start-overlay');
 
     overlay.addEventListener('click', () => {
         requestFullscreen();
         overlay.style.display = 'none';
 
-        if (rotationSlides.length > 0) {
+        if (pattern.length > 0) {
             displaySlide();
         } else {
-            startBtn.textContent = 'Loading...';
             const waitForData = setInterval(() => {
-                if (rotationSlides.length > 0) {
+                if (pattern.length > 0) {
                     clearInterval(waitForData);
-                    overlay.style.display = 'none';
                     displaySlide();
                 }
             }, 500);
@@ -123,21 +184,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ??? Slideshow ????????????????????????????????????????????????????????????????
-
-// REMOVE the entire existing displaySlide function and REPLACE with all of this:
-
-// ??? Helpers ??????????????????????????????????????????????????????????????????
-
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function getCurrentHHMM() {
     const now = new Date();
-    return now.getHours().toString().padStart(2, "0") + ":" +
-        now.getMinutes().toString().padStart(2, "0");
+    return now.getHours().toString().padStart(2, '0') + ':' +
+           now.getMinutes().toString().padStart(2, '0');
 }
 
 function getTodayName() {
-    return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-    [new Date().getDay()];
+    return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+        [new Date().getDay()];
 }
 
 function getTodayDateString() {
@@ -148,98 +204,106 @@ function getDurationMs(slide) {
     return slide.duration ? slide.duration * 1000 : DEFAULT_DURATION_MS;
 }
 
-// ??? Slide rendering ??????????????????????????????????????????????????????????
-
+// ─── Slide Rendering ──────────────────────────────────────────────────────────
 function renderSlide(item) {
-    const slideContainer = document.getElementById('slide-container');
-    slideContainer.innerHTML = '';
+    const container = document.getElementById('slide-container');
+    container.innerHTML = '';
 
-    if (item.photo) {
-        slideContainer.classList.remove('no-photo');
-    } else {
-        slideContainer.classList.add('no-photo');
-    }
-
-    const nameElement = document.createElement('h2');
-    nameElement.textContent = item.name;
-    slideContainer.appendChild(nameElement);
-
-    if (item.photo) {
-        const imgWrapper = document.createElement('div');
-        imgWrapper.className = 'img-wrapper';
-        const imageElement = document.createElement('img');
-        imageElement.src = item.photo;
-        imageElement.alt = item.name;
-        imgWrapper.appendChild(imageElement);
-        slideContainer.appendChild(imgWrapper);
-    }
-
-    const textElement = document.createElement('p');
-    textElement.textContent = item.text;
-    slideContainer.appendChild(textElement);
-}
-
-// ??? Rotation loop ????????????????????????????????????????????????????????????
-
-function displaySlide() {
-    if (isShowingScheduled || rotationSlides.length === 0) return;
-
-    const slide = rotationSlides[currentIndex];
-    renderSlide(slide);
-
-    rotationTimeoutId = setTimeout(() => {
-        currentIndex = (currentIndex + 1) % rotationSlides.length;
-        displaySlide();
-    }, getDurationMs(slide));
-}
-
-// ??? Scheduled slide playback ?????????????????????????????????????????????????
-
-function playScheduledQueue(queue, index, onAllDone) {
-    if (index >= queue.length) {
-        onAllDone();
+    // Document Folder slides — pure full-screen image, no text overlay
+    if (item.source === 'folder') {
+        container.className = 'folder-slide';
+        const img = document.createElement('img');
+        img.src = item.photo;
+        img.alt = '';
+        container.appendChild(img);
         return;
     }
-    const slide = queue[index];
-    renderSlide(slide);
-    setTimeout(() => {
-        playScheduledQueue(queue, index + 1, onAllDone);
-    }, getDurationMs(slide));
-}
 
-// ??? Scheduled slide check (every 30 seconds) ?????????????????????????????????
+    // Notion / Instagram slides — standard title + image + caption layout
+    container.className = item.photo ? '' : 'no-photo';
 
-setInterval(() => {
-    const today = getTodayDateString();
-    if (today !== firedDate) {
-        firedDate = today;
-        firedToday = {};
+    const nameEl = document.createElement('h2');
+    nameEl.textContent = item.name || '';
+    container.appendChild(nameEl);
+
+    if (item.photo) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'img-wrapper';
+        const img = document.createElement('img');
+        img.src    = item.photo;
+        img.alt    = item.name || '';
+        wrapper.appendChild(img);
+        container.appendChild(wrapper);
     }
 
-    const now = getCurrentHHMM();
+    const textEl = document.createElement('p');
+    textEl.textContent = item.text || '';
+    container.appendChild(textEl);
+}
+
+// ─── Rotation Loop ────────────────────────────────────────────────────────────
+// Reads the next slot from the repeating pattern and pulls the next slide from
+// that source's independent cycling array. Loop boundaries are seamless because
+// every index uses modulo — the pattern never "runs out."
+function displaySlide() {
+    if (isShowingScheduled || pattern.length === 0) return;
+
+    const source = pattern[patternIndex % pattern.length];
+    patternIndex++;
+
+    let slide;
+    if (source === 'ig' && igSlides.length > 0) {
+        slide = igSlides[igIndex % igSlides.length];
+        igIndex++;
+    } else if (source === 'folder' && folderSlides.length > 0) {
+        slide = folderSlides[folderIndex % folderSlides.length];
+        folderIndex++;
+    } else if (notionSlides.length > 0) {
+        // Fallback: if the pattern slot's source has no slides, show Notion
+        slide = notionSlides[notionIndex % notionSlides.length];
+        notionIndex++;
+    } else {
+        return; // nothing at all to show
+    }
+
+    renderSlide(slide);
+    rotationTimeoutId = setTimeout(() => displaySlide(), getDurationMs(slide));
+}
+
+// ─── Scheduled Slide Playback ─────────────────────────────────────────────────
+function playScheduledQueue(queue, index, onAllDone) {
+    if (index >= queue.length) { onAllDone(); return; }
+    const slide = queue[index];
+    renderSlide(slide);
+    setTimeout(() => playScheduledQueue(queue, index + 1, onAllDone), getDurationMs(slide));
+}
+
+// ─── Scheduled Slide Check (every 30 s) ──────────────────────────────────────
+setInterval(() => {
+    const today = getTodayDateString();
+    if (today !== firedDate) { firedDate = today; firedToday = {}; }
+
+    const now       = getCurrentHHMM();
     const todayName = getTodayName();
 
     const toFire = scheduledSlides.filter(slide => {
         if (slide.scheduledTime !== now) return false;
         const dayMatches = !slide.scheduledDay ||
-            slide.scheduledDay === "Everyday" ||
+            slide.scheduledDay === 'Everyday'  ||
             slide.scheduledDay === todayName;
         if (!dayMatches) return false;
-        const key = slide.scheduledTime + "_" + slide.name;
-        if (firedToday[key]) return false;
-        return true;
+        const key = slide.scheduledTime + '_' + slide.name;
+        return !firedToday[key];
     });
 
     if (toFire.length === 0) return;
 
-    toFire.forEach(s => { firedToday[s.scheduledTime + "_" + s.name] = true; });
-
+    toFire.forEach(s => { firedToday[s.scheduledTime + '_' + s.name] = true; });
     isShowingScheduled = true;
     clearTimeout(rotationTimeoutId);
 
     playScheduledQueue(toFire, 0, () => {
         isShowingScheduled = false;
-        displaySlide(); // resumes from currentIndex � no reset
+        displaySlide(); // resumes from where we left off — no reset
     });
-
 }, 30000);
