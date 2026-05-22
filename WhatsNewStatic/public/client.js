@@ -224,10 +224,11 @@ function renderSlide(item) {
         const img = document.createElement('img');
         img.src = item.photo;
         img.alt = '';
+        img.onload  = () => { img.style.opacity = '1'; };
         img.onerror = () => {
             console.warn('Folder image failed to load, skipping:', item.photo);
             clearTimeout(rotationTimeoutId);
-            rotationTimeoutId = setTimeout(() => displaySlide(), 300);
+            displaySlide();
         };
         container.appendChild(img);
         return;
