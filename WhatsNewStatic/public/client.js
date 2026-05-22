@@ -215,6 +215,11 @@ function renderSlide(item) {
         const img = document.createElement('img');
         img.src = item.photo;
         img.alt = '';
+        img.onerror = () => {
+            console.warn('Folder image failed to load, skipping:', item.photo);
+            clearTimeout(rotationTimeoutId);
+            rotationTimeoutId = setTimeout(() => displaySlide(), 300);
+        };
         container.appendChild(img);
         return;
     }
