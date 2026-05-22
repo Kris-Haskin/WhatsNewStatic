@@ -31,6 +31,15 @@ let isShowingScheduled = false;
 let firedToday = {};
 let firedDate  = "";
 
+// ─── Shuffle (Fisher-Yates) ───────────────────────────────────────────────────
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
 // ─── Pattern Builder ──────────────────────────────────────────────────────────
 // Uses a Bresenham-style error accumulation so slots are distributed as evenly
 // as possible across the cycle, regardless of frequency ratios.
@@ -122,7 +131,7 @@ async function refreshSlides() {
         if (rotation.length > 0 || ig.length > 0 || folder.length > 0) {
             notionSlides    = rotation;
             igSlides        = ig;
-            folderSlides    = folder;
+            folderSlides    = shuffle(folder);
             scheduledSlides = scheduled;
 
             // Keep per-source cursors in range after a refresh
